@@ -1,0 +1,56 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+
+// Registro
+exports.register = async (req, res) => {
+    try {
+        const { nombre, correo, telefono, direccion, password } = req.body;
+
+        const existe = await User.findOne({ correo });
+        if (existe) return res.status(400).json({ msg: 'El correo ya existe' });
+
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync(password, salt);
+
+        const user = new User({
+            nombre,
+            correo,
+            telefono,
+            direccion,
+            password: hash
+        });
+
+        await user.save();
+        res.status(201).json({ msg: 'Usuario creado', user });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Login
+exports.login = async (req, res) => {
+    try {
+        const { correo, password } = req.body;
+
+        const user = await User.findOne({ correo });
+        if (!user) return res.status(404).json({ msg: 'Usuario no encontrado' });
+
+        const valid = bcrypt.compareSync(password, user.password);
+        if (!valid) return res.status(401).json({ msg: 'Contraseña incorrecta' });
+
+        const token = jwt.sign(
+            { id: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.json({
+            msg: 'Login exitoso',
+            token,
+            user
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
