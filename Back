@@ -1,0 +1,20 @@
+const express = require('express');
+const app = express();
+const db = require('./config/db');
+const multerUpload = require('./config/multer');
+require('dotenv').config();
+
+app.use(express.json());
+app.use('/uploads', express.static('uploads'));
+
+// Ejemplo de endpoint para subir imagen:
+app.post('/upload', multerUpload.single('imagen'), (req, res) => {
+    res.json({
+        message: 'Imagen subida correctamente',
+        file: req.file
+    });
+});
+
+app.listen(process.env.PORT, () => {
+    console.log('Servidor corriendo en puerto', process.env.PORT);
+});
