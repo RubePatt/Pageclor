@@ -1,0 +1,80 @@
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+
+// Ruta de la base de datos
+const dbPath = path.join(__dirname, '../database.sqlite');
+
+// Abrir o crear BD
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error al abrir la BD:', err.message);
+    } else {
+        console.log('Base de datos SQLite conectada');
+    }
+});
+
+// TABLA USUARIOS
+db.run(`
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    correo TEXT UNIQUE NOT NULL,
+    telefono TEXT,
+    direccion TEXT,
+    password TEXT NOT NULL,
+    role TEXT DEFAULT 'user',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+`);
+
+// TABLA PRODUCTOS
+db.run(`
+CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    descripcion TEXT,
+    precio REAL NOT NULL,
+    cantidad INTEGER DEFAULT 0,
+    imagen TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+`);
+
+// TABLA ÓRDENES / COMPRAS
+db.run(`
+CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    total REAL NOT NULL,
+    direccion TEXT,
+    telefono_pago TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+)
+`);
+
+// TABLA DETALLE DE ÓRDENES
+db.run(`
+CREATE TABLE IF NOT EXISTS order_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER,
+    product_id INTEGER,
+    cantidad INTEGER,
+    precio REAL,
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+)
+`);
+
+// TABLA ADMIN (opcional, si quieres admin separado)
+db.run(`
+CREATE TABLE IF NOT EXISTS admin (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario TEXT UNIQUE,
+    password TEXT NOT NULL
+)
+`);
+
+db.close(() => {
+    console.log('Inicialización de base de datos finalizada');
+});
